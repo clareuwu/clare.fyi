@@ -40,6 +40,11 @@ pre {
     white-space: pre-wrap;
 }
 
+nav {
+  background: #FFBF00;
+  padding: 0.2rem;
+}
+
 nav a {
     text-align:center;
     color: var(--pink);

@@ -40,6 +40,11 @@ pre {
     white-space: pre-wrap;
 }
 
+nav a {
+    text-align:center;
+    color: var(--pink);
+}
+
 .hero-text {
     order: 2;
 }

@@ -19,7 +19,7 @@ type Post struct {
 	Filename string
 	Content  []byte
 	HTML     template.HTML
-	meta     metadata
+	Meta     metadata
 }
 type metadata struct {
 	Title string    `yaml:"title"`
@@ -35,7 +35,7 @@ func main() {
 		return
 	}
 
-	Printf("Found %d markdown files:\n", len(markdownPosts))
+	Printf("Found %d markdown files\n", len(markdownPosts))
 	tmpl, err := template.ParseFiles("blogt.html")
 	check(err)
 
@@ -44,6 +44,8 @@ func main() {
 		post.HTML = template.HTML(bytes.TrimSpace([]byte(post.HTML)))
 		outFile := "postsHTML/" + post.Filename + ".html"
 		file,e := os.Create(outFile); check(e); defer file.Close()
+		//post.meta.Title = "hiii :3"
+		Println(post.Meta.Title)
 		tmpl.Execute(file, post)
 		P("--- File: %s parsed and executed ---\n", post.Filename)
 	}
@@ -51,7 +53,7 @@ func main() {
 
 func check(err error) {
 	if err != nil {
-		Println("%w", err)
+		Println(err)
 	}
 }
 
@@ -81,7 +83,12 @@ func readMarkdownFiles(dirPath string) ([]Post, error) {
 
 			Printf("Metadata: %+v\n", matter)
 			posts = append(posts,
-				Post{Filename: strings.TrimSuffix(filename,".md"), Content: rest, HTML: template.HTML(buf.Bytes())})
+				Post{
+					Filename: strings.TrimSuffix(filename, ".md"),
+					Content:  rest,
+					HTML:     template.HTML(buf.Bytes()),
+					Meta:     matter,
+			})
 		}
 	}
 

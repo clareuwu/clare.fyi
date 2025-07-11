@@ -2,95 +2,42 @@ package main
 
 import (
 	"bytes"
-	."fmt"
 	"html/template"
-
-	//"log"
+	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/adrg/frontmatter"
 	"github.com/yuin/goldmark"
 )
 
-type Post struct {
-	Filename string
-	Content  []byte
-	HTML     template.HTML
-	Meta     metadata
-}
-type metadata struct {
-	Title string    `yaml:"title"`
-	Date  time.Time `yaml:"date"`
-}
+type D struct{ T template.HTML }
 
 func main() {
-	postsDir := "posts"
-
-	markdownPosts, err := readMarkdownFiles(postsDir)
-	if err != nil {
-		Printf("Error reading markdown files: %v\n", err)
-		return
+	t, e := template.ParseFiles("blogt.html")
+	if e != nil {
+		log.Fatal("couldn't open blog template")
 	}
-
-	Printf("Found %d markdown files\n", len(markdownPosts))
-	tmpl, err := template.ParseFiles("blogt.html")
-	check(err)
-
-	P := Printf
-	for _, post := range markdownPosts {
-		post.HTML = template.HTML(bytes.TrimSpace([]byte(post.HTML)))
-		outFile := "postsHTML/" + post.Filename + ".html"
-		file,e := os.Create(outFile); check(e); defer file.Close()
-		//post.meta.Title = "hiii :3"
-		Println(post.Meta.Title)
-		tmpl.Execute(file, post)
-		P("--- File: %s parsed and executed ---\n", post.Filename)
-	}
-}
-
-func check(err error) {
-	if err != nil {
-		Println(err)
-	}
-}
-
-func readMarkdownFiles(dirPath string) ([]Post, error) {
-	var posts []Post
-
-	files, err := os.ReadDir(dirPath)
-	if err != nil {
-		return nil, Errorf("failed to read directory '%s': %w", dirPath, err)
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			continue
+	filepath.WalkDir("posts", func(p string, d fs.DirEntry, e error) error {
+		if e != nil || d.IsDir() || !strings.HasSuffix(d.Name(), ".md") {
+			return e
 		}
-
-		filename := file.Name()
-		if strings.HasSuffix(filename, ".md") {
-			file := filepath.Join(dirPath, filename)
-			filedata, err := os.Open(file); check(err); defer filedata.Close()
-			var matter metadata
-			rest, err := frontmatter.Parse(filedata, &matter); check(err)
-			var buf bytes.Buffer
-			if err := goldmark.Convert(rest, &buf); err != nil {
-				Printf("failed to convert markdown file '%s' to HTML: %v\n", file, err)
-			}
-
-			Printf("Metadata: %+v\n", matter)
-			posts = append(posts,
-				Post{
-					Filename: strings.TrimSuffix(filename, ".md"),
-					Content:  rest,
-					HTML:     template.HTML(buf.Bytes()),
-					Meta:     matter,
-			})
+		f, e := os.ReadFile(p)
+		if e != nil {
+			return e
 		}
-	}
+		var buf bytes.Buffer
+		if e := goldmark.Convert(f, &buf); e != nil {
+			return e
+		}
+		buf = *bytes.NewBuffer(bytes.TrimSpace(buf.Bytes()))
+		if e := t.Execute(&buf, D{T: template.HTML(buf.Bytes())}); e != nil {
+			return e
+		}
+		o := filepath.Join("postsHTML", strings.TrimSuffix(d.Name(), ".md")+".html")
+		os.WriteFile(o, buf.Bytes(), 0o644)
 
-	return posts, nil
+		return nil
+	})
 }

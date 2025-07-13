@@ -31,8 +31,8 @@ func main() {
 		if e := goldmark.Convert(f, &buf); e != nil {
 			return e
 		}
-		buf = *bytes.NewBuffer(bytes.TrimSpace(buf.Bytes()))
-		if e := t.Execute(&buf, D{T: template.HTML(buf.Bytes())}); e != nil {
+		b := bytes.TrimSpace(buf.Bytes())
+		if e := t.Execute(&buf, D{T: template.HTML(b)}); e != nil {
 			return e
 		}
 		o := filepath.Join("postsHTML", strings.TrimSuffix(d.Name(), ".md")+".html")

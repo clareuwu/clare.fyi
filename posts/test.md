@@ -1,6 +1,6 @@
 ---
 title: Claresies!
-Date: 2025-07-09
+date: 2025-07-09
 ---
 # hi hello
 good morning my dear lady
